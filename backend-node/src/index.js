@@ -52,7 +52,7 @@ app.use('/api/repo', require('./routes/report'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/history', require('./routes/history'));
 app.use('/api/reviews', require('./routes/reviews'));
-app.get('/health', async (req, res) => {
+const healthCheckHandler = async (req, res) => {
   let dbStatus = 'disconnected';
   if (mongoose.connection.readyState === 1) {
     dbStatus = 'connected';
@@ -72,10 +72,10 @@ app.get('/health', async (req, res) => {
     uptime: process.uptime(),
     version: process.env.npm_package_version || '1.0.0'
   });
-});
+};
 
-// Alias for legacy /api/health requests if any
-app.get('/api/health', (req, res) => res.redirect('/health'));
+app.get('/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
