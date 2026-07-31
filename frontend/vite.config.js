@@ -17,6 +17,13 @@ export default defineConfig({
       host: 'localhost',
       clientPort: 5173,
     },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   build: {
     outDir: 'dist',

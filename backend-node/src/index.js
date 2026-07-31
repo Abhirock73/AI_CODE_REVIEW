@@ -27,7 +27,10 @@ app.use(cookieParser());
 
 // Production CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: function (origin, callback) {
+    // Reflect the request origin to allow credentials
+    callback(null, origin || true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
