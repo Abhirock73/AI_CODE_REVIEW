@@ -118,7 +118,7 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
       }
     }, 30000); // Check every 30 seconds
     return () => clearInterval(interval);
-  }, [repoId, token, BASE_URL, repo]);
+  }, [repoId, BASE_URL, repo]);
 
   // Fetch Git Status
   const fetchGitStatus = async () => {

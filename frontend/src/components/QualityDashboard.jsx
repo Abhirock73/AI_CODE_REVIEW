@@ -67,7 +67,7 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
     setPipelineSuccess(false);
     setProgressMsg('Initializing Review...');
 
-    const eventSource = new EventSource(`${BASE_URL}/api/ai/review-progress/${repo._id}?token=${token}`);
+    const eventSource = new EventSource(`${BASE_URL}/api/ai/review-progress/${repo._id}`, { withCredentials: true });
     eventSource.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
@@ -108,7 +108,7 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
   };
 
   const handleDownload = async () => {
-    if (!repo?._id || !token) return;
+    if (!repo?._id) return;
     setDownloadState('Generating ZIP...');
     try {
       const res = await apiFetch(`${BASE_URL}/api/repo/${repo._id}/download`, {
@@ -149,7 +149,7 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
   };
 
   const handleCloseWorkspace = async () => {
-    if (!repo?._id || !token) return;
+    if (!repo?._id) return;
     setClosingWorkspace(true);
     try {
       await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
@@ -166,7 +166,7 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
   };
 
   const handleExtendWorkspace = async () => {
-    if (!repo?._id || !token) return;
+    if (!repo?._id) return;
     try {
       await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace/ping`, {
         method: 'POST' });

@@ -14,7 +14,7 @@ const SessionExpirationModal = ({ isOpen, repo, onClose, onCleaned }) => {
   if (!isOpen) return null;
 
   const handleDownload = async () => {
-    if (!repo?._id || !token) return;
+    if (!repo?._id) return;
     setDownloadState('Initializing backup...');
     try {
       const res = await apiFetch(`${BASE_URL}/api/repo/${repo._id}/download`, {
@@ -47,7 +47,7 @@ const SessionExpirationModal = ({ isOpen, repo, onClose, onCleaned }) => {
   };
 
   const handleExtendWorkspace = async () => {
-    if (!repo?._id || !token) return;
+    if (!repo?._id) return;
     try {
       await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace/ping`, {
         method: 'POST' });
@@ -58,7 +58,7 @@ const SessionExpirationModal = ({ isOpen, repo, onClose, onCleaned }) => {
   };
 
   const handleCloseWorkspace = async () => {
-    if (!repo?._id || !token) return;
+    if (!repo?._id) return;
     setClosingWorkspace(true);
     try {
       await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {

@@ -34,7 +34,7 @@ const RepoIngestion = ({ onIngest }) => {
   const [reposLoading, setReposLoading] = useState(false);
   const [userReposFetched, setUserReposFetched] = useState(false);
 
-  
+  const { isAuthenticated } = useSelector((state) => state.auth);
   const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   const fetchUserRepos = async () => {
@@ -55,8 +55,8 @@ const RepoIngestion = ({ onIngest }) => {
   };
 
   useEffect(() => {
-    if (activeTab === 'github' && token) fetchUserRepos();
-  }, [activeTab, token]);
+    if (activeTab === 'github' && isAuthenticated) fetchUserRepos();
+  }, [activeTab, isAuthenticated]);
 
   useEffect(() => {
     setDetected(null);

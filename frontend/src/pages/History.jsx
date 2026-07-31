@@ -92,7 +92,7 @@ const History = () => {
       }
     };
     fetchHistory();
-  }, [token]);
+  }, []);
 
   const handleSelect = (repo) => {
     navigate('/', { state: { preloadedRepo: repo } });
