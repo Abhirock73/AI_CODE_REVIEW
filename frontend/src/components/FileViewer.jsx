@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Editor from '@monaco-editor/react';
@@ -23,8 +24,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Award,
-} from 'lucide-react';
+  Award } from 'lucide-react';
 
 
 const LANGUAGE_MAP = {
@@ -36,8 +36,7 @@ const LANGUAGE_MAP = {
   '.json': 'json',
   '.html': 'html',
   '.css': 'css',
-  '.md': 'markdown',
-};
+  '.md': 'markdown' };
 
 const ComplexityBadge = ({ score }) => {
   if (score === 'N/A' || score === undefined) return null;
@@ -84,8 +83,7 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
   const [prResult, setPrResult] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const token = useSelector((state) => state.auth.token);
-  const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
+    const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   // Toast Auto-dismiss
   useEffect(() => {
@@ -103,9 +101,8 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
     if (!repoId) return;
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/repo/${repoId}/workspace-status`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await apiFetch(`${BASE_URL}/api/repo/${repoId}/workspace-status`, {
+          });
         const data = await res.json();
         setInactivityStatus(data);
         
@@ -127,8 +124,8 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
   const fetchGitStatus = async () => {
     if (!repoId) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/github/status?repoId=${repoId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await apiFetch(`${BASE_URL}/api/github/status?repoId=${repoId}`, {
+        
       });
       const data = await res.json();
       if (data.gitStatus) {
@@ -144,8 +141,8 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
     if (!repoId) return;
     setHistoryLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/history/${repoId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await apiFetch(`${BASE_URL}/api/history/${repoId}`, {
+        
       });
       const data = await res.json();
       setReviewHistory(data.reviews || []);
@@ -181,9 +178,9 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
       setLoading(true);
       setFetchError(null);
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `${BASE_URL}/api/repo/${repoId}/file?path=${encodeURIComponent(selectedFile)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { }
         );
         if (!res.ok) {
           const errData = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
@@ -206,9 +203,9 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
     const fetchAnalysis = async () => {
       setAnalysisLoading(true);
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `${BASE_URL}/api/repo/${repoId}/file/analysis?path=${encodeURIComponent(selectedFile)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { }
         );
         const data = await res.json();
         setAnalysis(data);
@@ -247,11 +244,10 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
     if (!selectedFile || !repoId) return;
     if (!isAutoSave) setSaving(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/projects/${repoId}/file`, {
+      const res = await apiFetch(`${BASE_URL}/api/projects/${repoId}/file`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ path: selectedFile, content: editedContent }),
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: selectedFile, content: editedContent }) });
       const data = await res.json();
       if (res.ok) {
         setOriginalContent(editedContent);
@@ -286,10 +282,8 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
 
   const handleDiscardWorkspace = async () => {
     try {
-      await fetch(`${BASE_URL}/api/repo/${repoId}/workspace`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiFetch(`${BASE_URL}/api/repo/${repoId}/workspace`, {
+        method: 'DELETE' });
       setShowInactivityModal(false);
       window.location.reload(); 
     } catch (err) {
@@ -304,11 +298,10 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
     if (msg === null) return;
     setGitActionLoading('commit');
     try {
-      const res = await fetch(`${BASE_URL}/api/github/commit`, {
+      const res = await apiFetch(`${BASE_URL}/api/github/commit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ repoId, message: msg }),
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoId, message: msg }) });
       const data = await res.json();
       if (data.success) {
         setToast({ type: 'success', message: `Committed: ${data.commitHash ? data.commitHash.slice(0, 7) : 'Staged changes'}` });
@@ -328,11 +321,10 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
     if (!repoId) return;
     setGitActionLoading('push');
     try {
-      const res = await fetch(`${BASE_URL}/api/github/push`, {
+      const res = await apiFetch(`${BASE_URL}/api/github/push`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ repoId }),
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoId }) });
       const data = await res.json();
       if (data.success) {
         setToast({ type: 'success', message: 'Pushed changes to GitHub successfully!' });
@@ -355,11 +347,10 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
     if (!repoId) return;
     setGitActionLoading('pull');
     try {
-      const res = await fetch(`${BASE_URL}/api/github/pull`, {
+      const res = await apiFetch(`${BASE_URL}/api/github/pull`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ repoId }),
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoId }) });
       const data = await res.json();
       if (data.success) {
         setToast({ type: 'success', message: 'Pulled latest changes from GitHub!' });
@@ -397,18 +388,16 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
       const currentBranch = gitStatus?.currentBranch || repoMeta.defaultBranch || 'main';
       const [forkOwner] = (repoMeta.forkFullName || '').split('/');
       const head = forkOwner ? `${forkOwner}:${currentBranch}` : currentBranch;
-      const res = await fetch(`${BASE_URL}/api/github/create-pr`, {
+      const res = await apiFetch(`${BASE_URL}/api/github/create-pr`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           originalOwner: repoMeta.originalOwner,
           originalRepo: repoMeta.originalRepo,
           head,
           base: repoMeta.defaultBranch || 'main',
           title: prTitle,
-          body: prBody,
-        }),
-      });
+          body: prBody }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to create PR');
       setPrResult({ success: true, pr: data.pr, alreadyExists: data.alreadyExists });
@@ -740,8 +729,7 @@ const FileViewer = ({ repoId, repo, selectedFile, isHistoryView, onCodeChange, o
               scrollBeyondLastLine: false,
               automaticLayout: true,
               readOnly: isHistoryView,
-              fontFamily: 'Consolas, "Fira Code", Monaco, monospace',
-            }}
+              fontFamily: 'Consolas, "Fira Code", Monaco, monospace' }}
           />
         )}
       </div>

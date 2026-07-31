@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
@@ -15,11 +16,10 @@ const Signup = () => {
     e.preventDefault();
     setError(null);
     try {
-      const response = await fetch(`${BASE_URL}/api/auth/register`, {
+      const response = await apiFetch(`${BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+        body: JSON.stringify({ email, password }) });
 
       const data = await response.json();
 
@@ -27,7 +27,7 @@ const Signup = () => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      dispatch(setCredentials({ user: data.user, token: data.token }));
+      dispatch(setCredentials({ user: data.user }));
       navigate('/');
     } catch (err) {
       setError(err.message);

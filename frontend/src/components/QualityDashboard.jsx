@@ -1,10 +1,10 @@
+import { apiFetch } from '../utils/api';
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-} from 'recharts';
+  BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { 
   Code2, Shield, Zap, FileText, Play, Server, Clock, 
   CheckCircle2, Circle, Cloud, Database, Trash2, 
@@ -21,8 +21,7 @@ const GlassCard = ({ children, className = '' }) => (
 );
 
 const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHistoryView, workspaceStatus, workspaceInfo, remainingSeconds, formattedTime, onRestoreComplete, onCleaned }) => {
-  const token = useSelector((state) => state.auth.token);
-  const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
+    const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
   const navigate = useNavigate();
 
   const [isReviewing, setIsReviewing] = useState(false);
@@ -82,14 +81,11 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
     };
 
     try {
-      const res = await fetch(`${BASE_URL}/api/ai/review-repo`, {
+      const res = await apiFetch(`${BASE_URL}/api/ai/review-repo`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ repositoryId: repo._id }),
-      });
+          'Content-Type': 'application/json' },
+        body: JSON.stringify({ repositoryId: repo._id }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Review request failed');
       
@@ -115,9 +111,8 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
     if (!repo?._id || !token) return;
     setDownloadState('Generating ZIP...');
     try {
-      const res = await fetch(`${BASE_URL}/api/repo/${repo._id}/download`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await apiFetch(`${BASE_URL}/api/repo/${repo._id}/download`, {
+        });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to get backup URL');
@@ -135,10 +130,8 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
       
       if (!isGitHub) {
         try {
-          await fetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` }
-          });
+          await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
+            method: 'DELETE' });
           localStorage.removeItem('ai_review_current_repo');
           setDownloadState('');
           if (onCleaned) onCleaned();
@@ -159,10 +152,8 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
     if (!repo?._id || !token) return;
     setClosingWorkspace(true);
     try {
-      await fetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
+        method: 'DELETE' });
       setShowCleanupModal(false);
       localStorage.removeItem('ai_review_current_repo');
       
@@ -177,10 +168,8 @@ const QualityDashboard = ({ repo, latestReview, onRefresh, onFileSelect, isHisto
   const handleExtendWorkspace = async () => {
     if (!repo?._id || !token) return;
     try {
-      await fetch(`${BASE_URL}/api/repo/${repo._id}/workspace/ping`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace/ping`, {
+        method: 'POST' });
       if (onRestoreComplete) onRestoreComplete();
     } catch (error) {}
   };

@@ -1,8 +1,9 @@
+import { apiFetch } from './utils/api';
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { setNodeHealth, setAiHealth } from './store';
-import { logout } from './features/authSlice';
+import { logout, setCredentials } from './features/authSlice';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import History from './pages/History';
@@ -22,8 +23,7 @@ import { FolderCode, LogOut, MessageSquare, History as HistoryIcon, LayoutDashbo
 const LANGUAGE_MAP = {
   '.js': 'javascript', '.jsx': 'javascript',
   '.ts': 'typescript', '.tsx': 'typescript',
-  '.py': 'python', '.json': 'json', '.html': 'html', '.css': 'css',
-};
+  '.py': 'python', '.json': 'json', '.html': 'html', '.css': 'css' };
 
 const LS_REPO_KEY = 'ai_review_current_repo';
 
@@ -32,7 +32,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { nodeHealth, aiHealth } = useSelector((state) => state.health);
-  const { user, isAuthenticated, token } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
 
   // Restore repo from location.state or localStorage on mount
   const [currentRepo, setCurrentRepo] = useState(() => {
@@ -58,7 +58,7 @@ function Dashboard() {
   const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   // Global Workspace State powered by custom hook
-  const { workspaceInfo, remainingSeconds, formattedTime, isExpired, refreshTimer } = useWorkspaceTimer(displayRepo?._id, token, BASE_URL);
+  const { workspaceInfo, remainingSeconds, formattedTime, isExpired, refreshTimer } = useWorkspaceTimer(displayRepo?._id, BASE_URL);
   const isDirty = workspaceInfo?.dirty || false;
   const workspaceStatus = workspaceInfo?.status || 'ACTIVE';
 
@@ -107,18 +107,16 @@ function Dashboard() {
     const loadRepoData = async () => {
       setLatestReview(null); // Clear previous review immediately to avoid flashes
       try {
-        const res = await fetch(`${BASE_URL}/api/history/${displayRepo._id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await apiFetch(`${BASE_URL}/api/history/${displayRepo._id}`, {
+          });
         if (!res.ok) return;
         const data = await res.json();
         
         // 1. Update latest review by fetching the complete review using its reviewId
         if (data.reviews?.[0]?._id) {
           try {
-            const reviewRes = await fetch(`${BASE_URL}/api/reviews/${data.reviews[0]._id}`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
+            const reviewRes = await apiFetch(`${BASE_URL}/api/reviews/${data.reviews[0]._id}`, {
+              });
             if (reviewRes.ok) {
               const reviewData = await reviewRes.json();
               setLatestReview(reviewData.review);
@@ -143,12 +141,12 @@ function Dashboard() {
     };
 
     loadRepoData();
-  }, [displayRepo?._id, token, BASE_URL]);
+  }, [displayRepo?._id, BASE_URL]);
 
   useEffect(() => {
     const fetchHealth = async (url, action) => {
       try {
-        const r = await fetch(url);
+        const r = await apiFetch(url);
         dispatch(action(await r.json()));
       } catch (e) {
         dispatch(action({ status: 'error', message: e.message }));
@@ -166,15 +164,13 @@ function Dashboard() {
   const fetchLatestReview = async () => {
     if (!currentRepo?._id) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/history/${currentRepo._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await apiFetch(`${BASE_URL}/api/history/${currentRepo._id}`, {
+        });
       if (!res.ok) return;
       const data = await res.json();
       if (data.reviews?.[0]?._id) {
-        const reviewRes = await fetch(`${BASE_URL}/api/reviews/${data.reviews[0]._id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const reviewRes = await apiFetch(`${BASE_URL}/api/reviews/${data.reviews[0]._id}`, {
+          });
         if (reviewRes.ok) {
           const reviewData = await reviewRes.json();
           setLatestReview(reviewData.review);
@@ -187,9 +183,14 @@ function Dashboard() {
     } catch { setLatestReview(null); }
   };
 
-  const executePendingAction = (action) => {
+  const executePendingAction = async (action) => {
     const act = action || pendingAction;
     if (act === 'logout') {
+      try {
+        await apiFetch(`${BASE_URL}/api/auth/logout`, { method: 'POST' });
+      } catch (e) {
+        console.error('Logout API error:', e);
+      }
       localStorage.removeItem(LS_REPO_KEY);
       dispatch(logout());
     } else if (act === 'switch') {
@@ -233,16 +234,13 @@ function Dashboard() {
     try {
       let res;
       if (isGithub) {
-        res = await fetch(`${BASE_URL}/api/github/commit`, {
+        res = await apiFetch(`${BASE_URL}/api/github/commit`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ repoId: displayRepo._id, message: 'Auto-save before closing' }),
-        });
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ repoId: displayRepo._id, message: 'Auto-save before closing' }) });
       } else {
-        res = await fetch(`${BASE_URL}/api/repo/${displayRepo._id}/workspace/backup`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        res = await apiFetch(`${BASE_URL}/api/repo/${displayRepo._id}/workspace/backup`, {
+          method: 'POST' });
       }
       
       const data = await res.json();
@@ -261,10 +259,8 @@ function Dashboard() {
   const handleModalDiscard = async () => {
     if (!displayRepo) return;
     try {
-      await fetch(`${BASE_URL}/api/repo/${displayRepo._id}/workspace`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiFetch(`${BASE_URL}/api/repo/${displayRepo._id}/workspace`, {
+        method: 'DELETE' });
       setIsDirty(false);
       executePendingAction();
     } catch (err) {
@@ -464,6 +460,30 @@ import { ToastProvider } from './contexts/ToastContext';
 import ToastContainer from './components/ToastContainer';
 
 function App() {
+  const dispatch = useDispatch();
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const res = await apiFetch(`${import.meta.env.VITE_NODE_API_URL || ''}/api/auth/me`);
+        if (res.ok) {
+          const data = await res.json();
+          dispatch(setCredentials({ user: data.user }));
+        }
+      } catch (err) {
+        console.error('Failed to initialize session:', err);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    initAuth();
+  }, [dispatch]);
+
+  if (isInitializing) {
+    return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading session...</div>;
+  }
+
   return (
     <ToastProvider>
       <BrowserRouter>

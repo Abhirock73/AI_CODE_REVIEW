@@ -134,8 +134,13 @@ router.post('/register', registerLimiter, async (req, res) => {
     await newUser.save();
 
     const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, { expiresIn: '24h' });
-
-    res.status(201).json({ token, user: { id: newUser._id, email: newUser.email } });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+    res.status(201).json({ user: { id: newUser._id, email: newUser.email } });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Server error during registration' });
@@ -169,8 +174,13 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
-
-    res.json({ token, user: { id: user._id, email: user.email, githubUserId: user.githubUserId } });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+    res.json({ user: { id: user._id, email: user.email, githubUserId: user.githubUserId } });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login' });
@@ -231,9 +241,14 @@ router.get('/github/callback', async (req, res) => {
     }
 
     const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
-
-    const frontendUrl = process.env.FRONTEND_URL;
-    const redirectTarget = `${frontendUrl}/github/callback?token=${jwtToken}&user=${encodeURIComponent(JSON.stringify({ id: user._id, email: user.email, githubUserId: user.githubUserId }))}`;
+    res.cookie('token', jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const redirectTarget = `${frontendUrl}/github/callback`;
     res.redirect(redirectTarget);
   } catch (error) {
     console.error('GitHub OAuth callback error:', error);
@@ -295,9 +310,14 @@ router.post('/github', async (req, res) => {
     }
 
     const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
+    res.cookie('token', jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000
+    });
 
     res.json({
-      token: jwtToken,
       user: {
         id: user._id,
         email: user.email,
@@ -307,6 +327,31 @@ router.post('/github', async (req, res) => {
   } catch (error) {
     console.error('GitHub OAuth error:', error);
     res.status(500).json({ message: 'GitHub authentication error', error: error.message });
+  }
+});
+
+// POST /api/auth/logout - Clear the token cookie
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  });
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// GET /api/auth/me - Get current user details from cookie
+const authMiddleware = require('../middleware/auth');
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ user: { id: user._id, email: user.email, githubUserId: user.githubUserId } });
+  } catch (error) {
+    console.error('Fetch me error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

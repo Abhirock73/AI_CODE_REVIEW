@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import React, { useState } from 'react';
 import { Timer, Download, Loader2, Trash2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
@@ -8,8 +9,7 @@ const SessionExpirationModal = ({ isOpen, repo, onClose, onCleaned }) => {
   const [closingWorkspace, setClosingWorkspace] = useState(false);
   const { addToast } = useToast();
   
-  const token = useSelector((state) => state.auth.token);
-  const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
+    const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   if (!isOpen) return null;
 
@@ -17,9 +17,8 @@ const SessionExpirationModal = ({ isOpen, repo, onClose, onCleaned }) => {
     if (!repo?._id || !token) return;
     setDownloadState('Initializing backup...');
     try {
-      const res = await fetch(`${BASE_URL}/api/repo/${repo._id}/download`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await apiFetch(`${BASE_URL}/api/repo/${repo._id}/download`, {
+        });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to get backup URL');
@@ -36,10 +35,8 @@ const SessionExpirationModal = ({ isOpen, repo, onClose, onCleaned }) => {
       window.URL.revokeObjectURL(url);
       
       // Delete workspace after successful download
-      await fetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
+        method: 'DELETE' });
       
       setDownloadState('');
       onCleaned();
@@ -52,10 +49,8 @@ const SessionExpirationModal = ({ isOpen, repo, onClose, onCleaned }) => {
   const handleExtendWorkspace = async () => {
     if (!repo?._id || !token) return;
     try {
-      await fetch(`${BASE_URL}/api/repo/${repo._id}/workspace/ping`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace/ping`, {
+        method: 'POST' });
       onClose();
     } catch (error) {
       console.error('Failed to extend workspace:', error);
@@ -66,10 +61,8 @@ const SessionExpirationModal = ({ isOpen, repo, onClose, onCleaned }) => {
     if (!repo?._id || !token) return;
     setClosingWorkspace(true);
     try {
-      await fetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiFetch(`${BASE_URL}/api/repo/${repo._id}/workspace`, {
+        method: 'DELETE' });
       
       setClosingWorkspace(false);
       onCleaned();

@@ -1,8 +1,9 @@
+import { apiFetch } from '../utils/api';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 const MAX_SESSION_SECONDS = 30 * 60; // 30 minutes
 
-export function useWorkspaceTimer(repoId, token, baseUrl) {
+export function useWorkspaceTimer(repoId, baseUrl) {
   const [workspaceInfo, setWorkspaceInfo] = useState(null);
   const [remainingSeconds, setRemainingSeconds] = useState(null); // null = not yet loaded
   const [isExpired, setIsExpired] = useState(false);
@@ -14,10 +15,10 @@ export function useWorkspaceTimer(repoId, token, baseUrl) {
   const loadedRef = useRef(false);
 
   const fetchWorkspace = useCallback(async () => {
-    if (!repoId || !token || !baseUrl) return;
+    if (!repoId || !baseUrl) return;
     try {
-      const res = await fetch(`${baseUrl}/api/repo/${repoId}/workspace-status`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await apiFetch(`${baseUrl}/api/repo/${repoId}/workspace-status`, {
+        
         cache: 'no-store'
       });
       if (res.ok) {
@@ -33,7 +34,7 @@ export function useWorkspaceTimer(repoId, token, baseUrl) {
     } catch (error) {
       console.error('Failed to fetch workspace status:', error);
     }
-  }, [repoId, token, baseUrl]);
+  }, [repoId, baseUrl]);
 
   // Initial fetch on mount or repo change
   useEffect(() => {
@@ -117,6 +118,5 @@ export function useWorkspaceTimer(repoId, token, baseUrl) {
     remainingSeconds: remainingSeconds ?? 0,
     formattedTime: formatRemainingTime(remainingSeconds),
     isExpired, // true only when genuinely expired (not on refresh)
-    refreshTimer,
-  };
+    refreshTimer };
 }

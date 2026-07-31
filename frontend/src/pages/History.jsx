@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -72,15 +73,14 @@ const History = () => {
   const [repos, setRepos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const token = useSelector((state) => state.auth.token);
-  const navigate = useNavigate();
+    const navigate = useNavigate();
   const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/history`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await apiFetch(`${BASE_URL}/api/history`, {
+          
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);

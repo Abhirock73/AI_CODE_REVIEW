@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Bot, Send, User, Loader2, X, MessageSquare } from 'lucide-react';
@@ -27,8 +28,7 @@ const AiChatPanel = ({ onClose, repo }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
-  const token = useSelector((state) => state.auth.token);
-  const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
+    const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -47,15 +47,13 @@ const AiChatPanel = ({ onClose, repo }) => {
         ? `Repository: ${repo.name}. Languages: ${Object.keys(repo.metadata?.languageStats || {}).join(', ')}.`
         : '';
 
-      const res = await fetch(`${BASE_URL}/api/ai/chat`, {
+      const res = await apiFetch(`${BASE_URL}/api/ai/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: msg,
           repoId: repo?._id || 'general',
-          repoContext,
-        }),
-      });
+          repoContext }) });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'model', content: data.reply || 'Sorry, I could not generate a response.' }]);
     } catch {

@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Sparkles, Shield, Wrench, MessageSquare, ChevronRight, AlertTriangle, CheckCircle, Loader2, Save } from 'lucide-react';
@@ -40,16 +41,14 @@ const STEP_LABELS = {
   saving: 'Saving to disk…',
   analyzing: 'AI analyzing…',
   persisting: 'Saving score…',
-  done: 'Done!',
-};
+  done: 'Done!' };
 
 const AiReviewPanel = ({ repoId, selectedFile, fileContent, language, onReviewComplete, isHistoryView }) => {
   const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saveStep, setSaveStep] = useState('idle');
   const [error, setError] = useState(null);
-  const token = useSelector((state) => state.auth.token);
-  const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
+    const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   const isSaving = saveStep !== 'idle';
 
@@ -60,16 +59,14 @@ const AiReviewPanel = ({ repoId, selectedFile, fileContent, language, onReviewCo
     setError(null);
     setReview(null);
     try {
-      const res = await fetch(`${BASE_URL}/api/ai/review-file`, {
+      const res = await apiFetch(`${BASE_URL}/api/ai/review-file`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: fileContent,
           language: language || 'unknown',
           filename: selectedFile,
-          repositoryId: repoId,
-        }),
-      });
+          repositoryId: repoId }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Review failed');
       setReview(data);
@@ -90,11 +87,10 @@ const AiReviewPanel = ({ repoId, selectedFile, fileContent, language, onReviewCo
     try {
       // Step 1: Write edited code to disk
       setSaveStep('saving');
-      const saveRes = await fetch(`${BASE_URL}/api/repo/${repoId}/file`, {
+      const saveRes = await apiFetch(`${BASE_URL}/api/repo/${repoId}/file`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ filePath: selectedFile, newContent: fileContent }),
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath: selectedFile, newContent: fileContent }) });
       if (!saveRes.ok) {
         const d = await saveRes.json();
         throw new Error(d.message || 'Failed to save file');
@@ -102,16 +98,14 @@ const AiReviewPanel = ({ repoId, selectedFile, fileContent, language, onReviewCo
 
       // Step 2: Run Gemini AI review on the new content
       setSaveStep('analyzing');
-      const reviewRes = await fetch(`${BASE_URL}/api/ai/review-file`, {
+      const reviewRes = await apiFetch(`${BASE_URL}/api/ai/review-file`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: fileContent,
           language: language || 'unknown',
           filename: selectedFile,
-          repositoryId: repoId,
-        }),
-      });
+          repositoryId: repoId }) });
       const reviewData = await reviewRes.json();
       if (!reviewRes.ok) throw new Error(reviewData.message || 'AI review failed');
       setReview(reviewData);
@@ -119,15 +113,13 @@ const AiReviewPanel = ({ repoId, selectedFile, fileContent, language, onReviewCo
       // Step 3: Persist AI quality score to MongoDB
       setSaveStep('persisting');
       if (typeof reviewData.score === 'number') {
-        await fetch(`${BASE_URL}/api/repo/${repoId}/file`, {
+        await apiFetch(`${BASE_URL}/api/repo/${repoId}/file`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filePath: selectedFile,
             newContent: fileContent,
-            aiScore: reviewData.score,
-          }),
-        });
+            aiScore: reviewData.score }) });
       }
 
       // Step 4: Refresh QualityDashboard

@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -12,45 +13,36 @@ const GithubCallback = () => {
   const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const userParam = searchParams.get('user');
     const code = searchParams.get('code');
-
-    // Case 1: Backend redirected directly with JWT token and user payload
-    if (token && userParam) {
-      try {
-        const user = JSON.parse(userParam);
-        dispatch(setCredentials({ user, token }));
-        navigate('/');
-        return;
-      } catch (e) {
-        // Fallthrough to code exchange
-      }
-    }
-
-    // Case 2: Frontend received authorization code directly from GitHub
-    if (!code) {
-      setError('No authorization code or token found in URL redirect.');
-      return;
-    }
 
     const authenticateWithGithub = async () => {
       try {
-        const redirectUri = `${window.location.origin}/github/callback`;
-        const response = await fetch(`${BASE_URL}/api/auth/github`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, redirect_uri: redirectUri }),
-        });
+        if (code) {
+          const redirectUri = `${window.location.origin}/github/callback`;
+          const response = await apiFetch(`${BASE_URL}/api/auth/github`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, redirect_uri: redirectUri }) });
 
-        const data = await response.json();
+          const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data.message || data.error || 'GitHub authentication failed');
+          if (!response.ok) {
+            throw new Error(data.message || data.error || 'GitHub authentication failed');
+          }
+
+          dispatch(setCredentials({ user: data.user }));
+          navigate('/');
+        } else {
+          // Backend already handled the OAuth and set the cookie
+          const res = await apiFetch(`${BASE_URL}/api/auth/me`);
+          if (res.ok) {
+            const data = await res.json();
+            dispatch(setCredentials({ user: data.user }));
+            navigate('/');
+          } else {
+             throw new Error('Authentication failed');
+          }
         }
-
-        dispatch(setCredentials({ user: data.user, token: data.token }));
-        navigate('/');
       } catch (err) {
         console.error('GitHub callback error:', err);
         setError(err.message || 'Failed to authenticate with GitHub.');

@@ -1,9 +1,9 @@
+import { apiFetch } from '../utils/api';
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import {
   FolderGit2, Loader2, RefreshCw, GitFork, CheckCircle2,
-  Globe, Star, AlertCircle, ArrowRight, Layers, GitBranch, Lock,
-} from 'lucide-react';
+  Globe, Star, AlertCircle, ArrowRight, Layers, GitBranch, Lock } from 'lucide-react';
 
 const STEP_IDLE = 'idle';
 const STEP_DETECTING = 'detecting';
@@ -34,14 +34,14 @@ const RepoIngestion = ({ onIngest }) => {
   const [reposLoading, setReposLoading] = useState(false);
   const [userReposFetched, setUserReposFetched] = useState(false);
 
-  const token = useSelector((state) => state.auth.token);
+  
   const BASE_URL = import.meta.env.VITE_NODE_API_URL || '';
 
   const fetchUserRepos = async () => {
     setReposLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/github/repos`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await apiFetch(`${BASE_URL}/api/github/repos`, {
+        
       });
       const data = await res.json();
       setUserRepos(res.ok && data.repos ? data.repos : []);
@@ -67,19 +67,17 @@ const RepoIngestion = ({ onIngest }) => {
   const callImport = async (urlToImport, extraMeta = {}) => {
     setStep(STEP_CLONING);
     setStepMessage('Cloning repository into workspace...');
-    const response = await fetch(`${BASE_URL}/api/github/import`, {
+    const response = await apiFetch(`${BASE_URL}/api/github/import`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ url: urlToImport }),
-    });
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: urlToImport }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Import failed');
 
     const repo = data.repo || {
       _id: data.storagePath,
       name: data.repoName,
-      metadata: { tree: data.tree, languageStats: data.languageStats, storagePath: data.storagePath },
-    };
+      metadata: { tree: data.tree, languageStats: data.languageStats, storagePath: data.storagePath } };
     if (extraMeta.repoType) {
       repo.metadata = { ...(repo.metadata || {}), ...extraMeta };
     }
@@ -98,11 +96,10 @@ const RepoIngestion = ({ onIngest }) => {
     setStepMessage('Checking repository ownership...');
 
     try {
-      const res = await fetch(`${BASE_URL}/api/github/detect-repo`, {
+      const res = await apiFetch(`${BASE_URL}/api/github/detect-repo`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ url: urlToCheck }),
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlToCheck }) });
       const data = await res.json();
       if (!res.ok) { setStep(STEP_IDLE); setError(data.message || 'Failed to detect repository'); return; }
 
@@ -115,8 +112,7 @@ const RepoIngestion = ({ onIngest }) => {
           originalOwner: data.repoInfo.owner,
           originalRepo: data.repoInfo.name,
           defaultBranch: data.repoInfo.defaultBranch,
-          isFork: false,
-        });
+          isFork: false });
       }
     } catch (err) {
       setStep(STEP_IDLE);
@@ -130,11 +126,10 @@ const RepoIngestion = ({ onIngest }) => {
     setStep(STEP_FORKING);
     setStepMessage('Forking repository to your GitHub account...');
     try {
-      const forkRes = await fetch(`${BASE_URL}/api/github/fork`, {
+      const forkRes = await apiFetch(`${BASE_URL}/api/github/fork`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ owner: detected.repoInfo.owner, repo: detected.repoInfo.name }),
-      });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owner: detected.repoInfo.owner, repo: detected.repoInfo.name }) });
       const forkData = await forkRes.json();
       if (!forkRes.ok) throw new Error(forkData.message || 'Fork failed');
 
@@ -146,8 +141,7 @@ const RepoIngestion = ({ onIngest }) => {
         originalRepo: detected.repoInfo.name,
         forkFullName: forkData.fork.full_name,
         defaultBranch: forkData.fork.default_branch || detected.repoInfo.defaultBranch,
-        isFork: true,
-      });
+        isFork: true });
     } catch (err) {
       setStep(STEP_DETECTED);
       setError(err.message);
@@ -167,7 +161,7 @@ const RepoIngestion = ({ onIngest }) => {
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${BASE_URL}/api/repo/upload`, true);
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.withCredentials = true;
         
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {

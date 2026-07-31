@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '../../.env'
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
@@ -22,6 +23,7 @@ if (!MONGODB_URI) {
 
 app.use(helmet());
 app.use(compression());
+app.use(cookieParser());
 
 // Production CORS
 app.use(cors({
