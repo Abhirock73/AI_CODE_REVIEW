@@ -464,6 +464,9 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
+    // Clean up any legacy token that might still be in localStorage
+    localStorage.removeItem('token');
+
     const initAuth = async () => {
       try {
         const res = await apiFetch(`${import.meta.env.VITE_NODE_API_URL || ''}/api/auth/me`);
