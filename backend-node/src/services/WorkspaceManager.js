@@ -210,17 +210,23 @@ class WorkspaceManager {
    */
   static async deleteWorkspace(workspaceId) {
     try {
-      const workspace = await Workspace.findOne({ workspaceId });
-      if (!workspace) return;
+      // 1. Always attempt to delete from Redis (idempotent)
+      await delCache(`workspace:${workspaceId}`);
 
-      console.log(`[WorkspaceManager] Deleting workspace ${workspaceId} at ${workspace.repositoryPath}`);
+      const workspace = await Workspace.findOne({ workspaceId });
+
+      // 2. Resolve directory path and delete (idempotent)
+      const targetPath = workspace ? workspace.repositoryPath : path.join(WORKSPACE_DIR, workspaceId);
+      console.log(`[WorkspaceManager] Deleting workspace ${workspaceId} at ${targetPath}`);
       
-      // Attempt to delete directory
       try {
-        await fs.rm(workspace.repositoryPath, { recursive: true, force: true });
+        await fs.rm(targetPath, { recursive: true, force: true });
       } catch (fsErr) {
-        console.error(`[WorkspaceManager] Failed to delete directory ${workspace.repositoryPath}:`, fsErr);
+        console.error(`[WorkspaceManager] Failed to delete directory ${targetPath}:`, fsErr);
       }
+
+      // If DB entry missing, we're done
+      if (!workspace) return;
 
       // Isolate ReviewHistory cleanup for ZIP repositories
       if (workspace.repositoryType === 'zip') {
@@ -234,7 +240,6 @@ class WorkspaceManager {
       }
 
       await Workspace.deleteOne({ workspaceId });
-      await delCache(`workspace:${workspaceId}`);
     } catch (err) {
       console.error(`[WorkspaceManager] Failed to delete workspace ${workspaceId}:`, err);
     }
