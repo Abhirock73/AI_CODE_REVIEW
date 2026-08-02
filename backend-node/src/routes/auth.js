@@ -8,6 +8,16 @@ const { createRateLimiter } = require('../middleware/rateLimiter');
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'my-super-secret-jwt-key';
 
+// Helper function to set the authentication cookie securely
+const setAuthCookie = (res, token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: true,     // Required for cross-origin (Supported on Chrome localhost)
+    sameSite: 'none', // Always 'none' for API usage
+    maxAge: 24 * 60 * 60 * 1000
+  });
+};
+
 // Helper function for exchanging GitHub OAuth code for access token with automatic fallback
 async function exchangeGithubCode(code, redirectUri) {
   const clientId = process.env.GITHUB_CLIENT_ID;
@@ -134,12 +144,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     await newUser.save();
 
     const token = jwt.sign({ userId: newUser._id }, JWT_SECRET, { expiresIn: '24h' });
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000
-    });
+    setAuthCookie(res, token);
     res.status(201).json({ user: { id: newUser._id, email: newUser.email } });
   } catch (error) {
     console.error('Registration error:', error);
@@ -174,12 +179,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000
-    });
+    setAuthCookie(res, token);
     res.json({ user: { id: user._id, email: user.email, githubUserId: user.githubUserId } });
   } catch (error) {
     console.error('Login error:', error);
@@ -241,12 +241,7 @@ router.get('/github/callback', async (req, res) => {
     }
 
     const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
-    res.cookie('token', jwtToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000
-    });
+    setAuthCookie(res, jwtToken);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const redirectTarget = `${frontendUrl}/github/callback`;
     res.redirect(redirectTarget);
@@ -310,12 +305,7 @@ router.post('/github', async (req, res) => {
     }
 
     const jwtToken = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '24h' });
-    res.cookie('token', jwtToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: 24 * 60 * 60 * 1000
-    });
+    setAuthCookie(res, jwtToken);
 
     res.json({
       user: {
@@ -334,8 +324,8 @@ router.post('/github', async (req, res) => {
 router.post('/logout', (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: true,
+    sameSite: 'none',
   });
   res.json({ success: true, message: 'Logged out successfully' });
 });
