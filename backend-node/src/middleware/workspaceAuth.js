@@ -1,5 +1,5 @@
 const Workspace = require('../models/Workspace');
-const { getCache, setCache } = require('../services/redisCache');
+const { getCache, expireCache } = require('../services/redisCache');
 
 /**
  * Middleware to verify workspace ownership using Redis.
@@ -47,7 +47,7 @@ const workspaceAuth = async (req, res, next) => {
     // 7. Only then continue
     
     // Refresh TTL back to 30 minutes due to activity
-    await setCache(redisKey, redisData, 1800);
+    await expireCache(redisKey, 1800);
 
     // Attach to request for downstream handlers
     req.workspaceId = workspaceId;

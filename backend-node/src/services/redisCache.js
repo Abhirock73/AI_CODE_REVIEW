@@ -107,6 +107,17 @@ const delCache = async (key) => {
   }
 };
 
+const expireCache = async (key, expirySeconds) => {
+  if (!isConnected || !client) {
+    return;
+  }
+  try {
+    await client.expire(key, expirySeconds);
+  } catch (error) {
+    console.log('Redis EXPIRE failed');
+  }
+};
+
 const getClient = () => client;
 
 module.exports = {
@@ -114,6 +125,7 @@ module.exports = {
   getCache,
   setCache,
   delCache,
+  expireCache,
   isReady,
   getClient,
 };
