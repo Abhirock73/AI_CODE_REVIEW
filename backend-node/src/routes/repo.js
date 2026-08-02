@@ -5,6 +5,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const simpleGit = require('simple-git');
 const authMiddleware = require('../middleware/auth');
+const workspaceAuth = require('../middleware/workspaceAuth');
 const Repository = require('../models/Repository');
 const User = require('../models/User');
 const { decrypt } = require('../utils/cryptoUtils');
@@ -222,7 +223,7 @@ router.post('/import-github', authMiddleware, async (req, res) => {
 const StorageService = require('../services/StorageService');
 
 // GET /api/repo/:id/download - Dynamic ZIP Download
-router.get('/:id/download', authMiddleware, async (req, res) => {
+router.get('/:id/download', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const workspace = await WorkspaceManager.getWorkspace(req.params.id, req.userId, false);
     if (!workspace) {
@@ -246,7 +247,7 @@ router.get('/:id/download', authMiddleware, async (req, res) => {
 });
 
 // GET /api/repo/:id/workspace-status - Get workspace inactivity status
-router.get('/:id/workspace-status', authMiddleware, async (req, res) => {
+router.get('/:id/workspace-status', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const workspace = await WorkspaceManager.getWorkspace(req.params.id, req.userId, true); // readOnly: do NOT update lastActivity
     if (!workspace) {
@@ -275,7 +276,7 @@ router.get('/:id/workspace-status', authMiddleware, async (req, res) => {
 });
 
 // DELETE /api/repo/:id/workspace - Discard/Delete workspace forcefully
-router.delete('/:id/workspace', authMiddleware, async (req, res) => {
+router.delete('/:id/workspace', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const workspace = await WorkspaceManager.getWorkspace(req.params.id, req.userId);
     if (!workspace) {
@@ -291,7 +292,7 @@ router.delete('/:id/workspace', authMiddleware, async (req, res) => {
 
 
 // POST /api/repo/:id/workspace/close - Graceful Workspace Close
-router.post('/:id/workspace/close', authMiddleware, async (req, res) => {
+router.post('/:id/workspace/close', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const workspace = await WorkspaceManager.getWorkspace(req.params.id, req.userId, false);
     if (!workspace) {
@@ -308,7 +309,7 @@ router.post('/:id/workspace/close', authMiddleware, async (req, res) => {
 });
 
 // POST /api/repo/:id/workspace/ping - Keep alive
-router.post('/:id/workspace/ping', authMiddleware, async (req, res) => {
+router.post('/:id/workspace/ping', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const workspace = await WorkspaceManager.getWorkspace(req.params.id, req.userId, false);
     if (!workspace) return res.status(404).json({ success: false });

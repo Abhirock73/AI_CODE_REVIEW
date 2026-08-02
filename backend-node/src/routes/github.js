@@ -7,6 +7,7 @@ const Repository = require('../models/Repository');
 const { encrypt, decrypt } = require('../utils/cryptoUtils');
 const { parseDirectory, calculateLanguageStats } = require('../utils/repoParser');
 const authMiddleware = require('../middleware/auth');
+const workspaceAuth = require('../middleware/workspaceAuth');
 const WorkspaceManager = require('../services/WorkspaceManager');
 const { createRateLimiter } = require('../middleware/rateLimiter');
 
@@ -469,7 +470,7 @@ router.get('/status', async (req, res) => {
 });
 
 // POST /github/commit - Execute git add . and git commit
-router.post('/commit', async (req, res) => {
+router.post('/commit', workspaceAuth, async (req, res) => {
   try {
     const { message, push: shouldPush } = req.body;
     const targetPath = await resolveStoragePath(req);
@@ -534,7 +535,7 @@ router.post('/commit', async (req, res) => {
 });
 
 // POST /github/push - Fetch remote state, verify local branch is not behind, and push
-router.post('/push', async (req, res) => {
+router.post('/push', workspaceAuth, async (req, res) => {
   try {
     const targetPath = await resolveStoragePath(req);
 
@@ -562,7 +563,7 @@ router.post('/push', async (req, res) => {
 });
 
 // POST /github/pull - Execute git pull
-router.post('/pull', async (req, res) => {
+router.post('/pull', workspaceAuth, async (req, res) => {
   try {
     const targetPath = await resolveStoragePath(req);
 

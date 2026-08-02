@@ -9,8 +9,9 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 const Workspace = require('../models/Workspace');
 const Repository = require('../models/Repository');
 const StorageService = require('./StorageService');
+const { setCache, delCache } = require('./redisCache');
 
-const WORKSPACE_DIR = process.env.WORKSPACE_DIR || path.join(os.tmpdir(), 'tmp_workspace');
+const WORKSPACE_DIR = process.env.WORKSPACE_DIR || '/tmp/workspaces';
 
 class WorkspaceManager {
   /**
@@ -75,6 +76,17 @@ class WorkspaceManager {
     });
 
     await workspace.save();
+
+    // Save workspace metadata to Redis with 30 minute TTL (1800s)
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    await setCache(`workspace:${workspaceId}`, {
+      workspaceId,
+      ownerId,
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString(),
+      expiresAt
+    }, 1800);
+
     return workspace;
   }
 
@@ -222,6 +234,7 @@ class WorkspaceManager {
       }
 
       await Workspace.deleteOne({ workspaceId });
+      await delCache(`workspace:${workspaceId}`);
     } catch (err) {
       console.error(`[WorkspaceManager] Failed to delete workspace ${workspaceId}:`, err);
     }

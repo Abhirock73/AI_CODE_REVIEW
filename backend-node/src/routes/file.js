@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const authMiddleware = require('../middleware/auth');
+const workspaceAuth = require('../middleware/workspaceAuth');
 const Repository = require('../models/Repository');
 const WorkspaceManager = require('../services/WorkspaceManager');
 const { analyzeFile } = require('../utils/staticAnalyzer');
@@ -10,7 +11,7 @@ const StorageService = require('../services/StorageService');
 const router = express.Router();
 
 // Get project details, file tree, and language stats
-router.get('/:id/project', authMiddleware, async (req, res) => {
+router.get('/:id/project', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
@@ -26,7 +27,7 @@ router.get('/:id/project', authMiddleware, async (req, res) => {
 });
 
 // Get raw file content using StorageService
-router.get('/:id/file', authMiddleware, async (req, res) => {
+router.get('/:id/file', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
@@ -45,7 +46,7 @@ router.get('/:id/file', authMiddleware, async (req, res) => {
 });
 
 // Get file analysis
-router.get('/:id/file/analysis', authMiddleware, async (req, res) => {
+router.get('/:id/file/analysis', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
@@ -80,7 +81,7 @@ router.get('/:id/file/analysis', authMiddleware, async (req, res) => {
 });
 
 // Update file content, bust cache, re-run analysis, optionally persist AI score
-router.put('/:id/file', authMiddleware, async (req, res) => {
+router.put('/:id/file', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
@@ -126,7 +127,7 @@ router.put('/:id/file', authMiddleware, async (req, res) => {
 });
 
 // Create new file
-router.post('/:id/file', authMiddleware, async (req, res) => {
+router.post('/:id/file', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
@@ -143,7 +144,7 @@ router.post('/:id/file', authMiddleware, async (req, res) => {
 });
 
 // Create new folder
-router.post('/:id/folder', authMiddleware, async (req, res) => {
+router.post('/:id/folder', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
@@ -160,7 +161,7 @@ router.post('/:id/folder', authMiddleware, async (req, res) => {
 });
 
 // Delete file or folder
-router.delete('/:id/file', authMiddleware, async (req, res) => {
+router.delete('/:id/file', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
@@ -177,7 +178,7 @@ router.delete('/:id/file', authMiddleware, async (req, res) => {
 });
 
 // Rename file or folder
-router.post('/:id/rename', authMiddleware, async (req, res) => {
+router.post('/:id/rename', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
@@ -194,7 +195,7 @@ router.post('/:id/rename', authMiddleware, async (req, res) => {
 });
 
 // Download project ZIP archive
-router.get('/:id/zip', authMiddleware, async (req, res) => {
+router.get('/:id/zip', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });

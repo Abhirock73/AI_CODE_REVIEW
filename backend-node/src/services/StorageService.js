@@ -5,7 +5,7 @@ const Repository = require('../models/Repository');
 const { parseDirectory, calculateLanguageStats } = require('../utils/repoParser');
 
 const os = require('os');
-const WORKSPACE_DIR = process.env.WORKSPACE_DIR || path.join(os.tmpdir(), 'tmp_workspace');
+const WORKSPACE_DIR = process.env.WORKSPACE_DIR || '/tmp/workspaces';
 
 /**
  * StorageService provides an abstraction over workspace storage (tmp_workspace)
@@ -57,6 +57,12 @@ class StorageService {
    */
   static _sanitizePath(projectDir, relativePath) {
     if (!relativePath) return projectDir;
+
+    // Reject absolute paths and directory traversal attempts explicitly
+    if (path.isAbsolute(relativePath) || relativePath.includes('../') || relativePath.includes('..\\')) {
+      throw new Error('Access denied: Invalid file path traversal');
+    }
+
     const safePath = path.normalize(relativePath).replace(/^(\.\.([/\\]|$))+/, '');
     const resolvedPath = path.join(projectDir, safePath);
     if (!resolvedPath.startsWith(path.resolve(projectDir))) {

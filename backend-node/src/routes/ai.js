@@ -3,6 +3,7 @@ const { OpenAI } = require('openai');
 const fs = require('fs').promises;
 const path = require('path');
 const authMiddleware = require('../middleware/auth');
+const workspaceAuth = require('../middleware/workspaceAuth');
 const ReviewHistory = require('../models/ReviewHistory');
 const Repository = require('../models/Repository');
 const { getCache, setCache } = require('../services/redisCache');
@@ -129,7 +130,7 @@ router.get('/health', (req, res) => {
 });
 
 // Review a file via Gemini API in Node.js
-router.post('/review-file', authMiddleware, async (req, res) => {
+router.post('/review-file', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const { code, language = 'unknown', filename = 'file', repositoryId } = req.body;
 
@@ -298,7 +299,7 @@ ${code.slice(0, 100000)}
 });
 
 // Chat with AI about the repository
-router.post('/chat', authMiddleware, async (req, res) => {
+router.post('/chat', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const { message, repoId = 'general', repoContext } = req.body;
 
@@ -359,7 +360,7 @@ Be concise, technical, and helpful. Format responses with markdown where appropr
 });
 
 // ── SSE Endpoint for Real-time Progress ──────────────────────────────────────
-router.get('/review-progress/:repositoryId', authMiddleware, (req, res) => {
+router.get('/review-progress/:repositoryId', authMiddleware, workspaceAuth, (req, res) => {
   const { repositoryId } = req.params;
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -392,7 +393,7 @@ const reviewLimiter = createRateLimiter({
   customMessage: 'Too many review requests. Please try again after 1 minute.'
 });
 
-router.post('/review-repo', authMiddleware, reviewLimiter, async (req, res) => {
+router.post('/review-repo', authMiddleware, workspaceAuth, reviewLimiter, async (req, res) => {
   try {
     const { repositoryId } = req.body;
     if (!repositoryId) {

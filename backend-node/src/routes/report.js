@@ -1,6 +1,7 @@
 const express = require('express');
 const PDFDocument = require('pdfkit');
 const authMiddleware = require('../middleware/auth');
+const workspaceAuth = require('../middleware/workspaceAuth');
 const Repository = require('../models/Repository');
 const ReviewHistory = require('../models/ReviewHistory');
 
@@ -20,7 +21,7 @@ function scoreColor(score) {
   return '#ef4444';
 }
 
-router.get('/:id/export/pdf', authMiddleware, async (req, res) => {
+router.get('/:id/export/pdf', authMiddleware, workspaceAuth, async (req, res) => {
   try {
     const repo = await Repository.findOne({ _id: req.params.id, userId: req.userId });
     if (!repo) return res.status(404).json({ message: 'Repository not found' });
