@@ -196,9 +196,13 @@ function Dashboard() {
     } else if (act === 'switch') {
       if (currentRepo && currentRepo._id) {
         try {
-          await apiFetch(`${BASE_URL}/api/repo/${currentRepo._id}/workspace/close`, { method: 'POST' });
+          const res = await apiFetch(`${BASE_URL}/api/repo/${currentRepo._id}/workspace/close`, { method: 'POST' });
+          if (!res.ok) throw new Error('API failed');
         } catch (e) {
           console.error('Failed to close workspace on switch:', e);
+          alert('Failed to close workspace cleanly. Switch aborted.');
+          setPendingAction(null);
+          return;
         }
       }
       localStorage.removeItem(LS_REPO_KEY);
@@ -278,9 +282,12 @@ function Dashboard() {
   const handleIngest = async (repo) => {
     if (currentRepo && currentRepo._id && currentRepo._id !== repo._id) {
       try {
-        await apiFetch(`${BASE_URL}/api/repo/${currentRepo._id}/workspace/close`, { method: 'POST' });
+        const res = await apiFetch(`${BASE_URL}/api/repo/${currentRepo._id}/workspace/close`, { method: 'POST' });
+        if (!res.ok) throw new Error('API failed');
       } catch (e) {
         console.error('Failed to close previous workspace on ingest switch:', e);
+        alert('Failed to close previous workspace cleanly. Switch aborted.');
+        return;
       }
     }
     setCurrentRepo(repo);
