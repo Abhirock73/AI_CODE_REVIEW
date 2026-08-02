@@ -275,7 +275,14 @@ function Dashboard() {
     }
   };
 
-  const handleIngest = (repo) => {
+  const handleIngest = async (repo) => {
+    if (currentRepo && currentRepo._id && currentRepo._id !== repo._id) {
+      try {
+        await apiFetch(`${BASE_URL}/api/repo/${currentRepo._id}/workspace/close`, { method: 'POST' });
+      } catch (e) {
+        console.error('Failed to close previous workspace on ingest switch:', e);
+      }
+    }
     setCurrentRepo(repo);
     setSelectedFile(null);
     setEditedCode(null);
