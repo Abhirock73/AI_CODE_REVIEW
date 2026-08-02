@@ -278,11 +278,10 @@ router.get('/:id/workspace-status', authMiddleware, workspaceAuth, async (req, r
 // DELETE /api/repo/:id/workspace - Discard/Delete workspace forcefully
 router.delete('/:id/workspace', authMiddleware, workspaceAuth, async (req, res) => {
   try {
-    const workspace = await WorkspaceManager.getWorkspace(req.params.id, req.userId);
-    if (!workspace) {
+    if (!req.workspaceId) {
       return res.status(404).json({ success: false, error: 'Workspace not found' });
     }
-    await WorkspaceManager.deleteWorkspace(workspace.workspaceId);
+    await WorkspaceManager.deleteWorkspace(req.workspaceId);
     res.json({ success: true, message: 'Workspace deleted successfully' });
   } catch (error) {
     console.error('Workspace deletion error:', error);
@@ -294,13 +293,11 @@ router.delete('/:id/workspace', authMiddleware, workspaceAuth, async (req, res) 
 // POST /api/repo/:id/workspace/close - Graceful Workspace Close
 router.post('/:id/workspace/close', authMiddleware, workspaceAuth, async (req, res) => {
   try {
-    const workspace = await WorkspaceManager.getWorkspace(req.params.id, req.userId, false);
-    if (!workspace) {
+    if (!req.workspaceId) {
       return res.json({ success: true, message: 'Workspace already closed' });
     }
 
-
-    await WorkspaceManager.deleteWorkspace(workspace.workspaceId);
+    await WorkspaceManager.deleteWorkspace(req.workspaceId);
     res.json({ success: true, message: 'Workspace closed successfully' });
   } catch (error) {
     console.error('Workspace close error:', error);
