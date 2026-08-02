@@ -137,9 +137,9 @@ const AiReviewPanel = ({ repoId, selectedFile, fileContent, language, onReviewCo
   const canReview = !!fileContent && !isHistoryView && language !== 'unknown';
 
   return (
-    <div className="w-full h-full flex bg-gray-900 overflow-hidden">
+    <div className="w-full h-full flex flex-col md:flex-row bg-gray-900 overflow-hidden">
       {/* Left Sidebar: Header, Actions, and Score */}
-      <div className="w-72 flex-none flex flex-col border-r border-gray-800 bg-gray-900/50">
+      <div className="w-full md:w-72 flex-none flex flex-col border-b md:border-b-0 md:border-r border-gray-800 bg-gray-900/50">
         <div className="p-4 border-b border-gray-800 flex-none space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles size={14} className="text-purple-400" />

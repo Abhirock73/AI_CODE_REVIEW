@@ -18,7 +18,7 @@ import UnsavedChangesModal from './components/UnsavedChangesModal';
 import SessionExpirationModal from './components/SessionExpirationModal';
 import { useWorkspaceTimer } from './hooks/useWorkspaceTimer';
 
-import { FolderCode, LogOut, MessageSquare, History as HistoryIcon, LayoutDashboard, ChevronRight, FolderSync } from 'lucide-react';
+import { FolderCode, LogOut, MessageSquare, History as HistoryIcon, LayoutDashboard, ChevronRight, FolderSync, Menu, X } from 'lucide-react';
 
 const LANGUAGE_MAP = {
   '.js': 'javascript', '.jsx': 'javascript',
@@ -63,6 +63,7 @@ function Dashboard() {
   const workspaceStatus = workspaceInfo?.status || 'ACTIVE';
 
   const [pendingAction, setPendingAction] = useState(null); // 'logout', 'switch', 'history'
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -306,38 +307,54 @@ function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gray-950 text-gray-200 overflow-hidden font-sans">
-      {/* Sidebar: File Explorer */}
-      {displayRepo ? (
-        <FileExplorer
-          repo={displayRepo}
-          selectedFile={selectedFile}
-          onFileClick={setSelectedFile}
-          onDashboardClick={goToDashboard}
+      {/* Mobile Sidebar Backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
-      ) : (
-        <div className="w-64 border-r border-gray-800 bg-gray-900/30 flex flex-col items-center justify-center text-gray-500 p-6 text-center">
-          <FolderCode size={40} className="mb-4 opacity-20" />
-          <p className="text-sm">Upload a repository to view its files</p>
-        </div>
       )}
+
+      {/* Sidebar Container */}
+      <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 ease-in-out md:relative md:translate-x-0 flex flex-col h-full bg-gray-950 md:bg-transparent ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        {displayRepo ? (
+          <FileExplorer
+            repo={displayRepo}
+            selectedFile={selectedFile}
+            onFileClick={(file) => { setSelectedFile(file); setSidebarOpen(false); }}
+            onDashboardClick={() => { goToDashboard(); setSidebarOpen(false); }}
+          />
+        ) : (
+          <div className="w-64 h-full border-r border-gray-800 bg-gray-900/30 flex flex-col items-center justify-center text-gray-500 p-6 text-center shrink-0">
+            <FolderCode size={40} className="mb-4 opacity-20" />
+            <p className="text-sm">Upload a repository to view its files</p>
+          </div>
+        )}
+      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-14 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between px-6 shrink-0">
-          <div className="flex items-center gap-3">
-            <FolderCode size={20} className="text-blue-400" />
-            <h1 className="text-base font-bold text-white">AI Code Review</h1>
+        <header className="h-14 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between px-3 md:px-6 shrink-0 overflow-x-auto no-scrollbar gap-4">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden p-1.5 -ml-1 text-gray-400 hover:text-white transition-colors rounded-md hover:bg-gray-800"
+            >
+              <Menu size={20} />
+            </button>
+            <FolderCode size={20} className="text-blue-400 hidden sm:block" />
+            <h1 className="text-base font-bold text-white hidden sm:block">AI Code Review</h1>
             {selectedFile && displayRepo && (
-              <div className="flex items-center gap-2 ml-4 px-3 py-1 bg-gray-800 rounded-md border border-gray-700">
+              <div className="flex items-center gap-1.5 md:gap-2 ml-1 md:ml-4 px-2 md:px-3 py-1 bg-gray-800 rounded-md border border-gray-700">
                 <button
                   onClick={goToDashboard}
-                  className="text-xs text-gray-400 hover:text-blue-400 transition-colors truncate max-w-[150px]"
+                  className="text-xs text-gray-400 hover:text-blue-400 transition-colors truncate max-w-[100px] md:max-w-[150px]"
                 >
                   {displayRepo.name}
                 </button>
-                <ChevronRight size={12} className="text-gray-500" />
-                <span className="text-xs text-blue-300 font-mono truncate max-w-[300px]">
+                <ChevronRight size={12} className="text-gray-500 shrink-0" />
+                <span className="text-xs text-blue-300 font-mono truncate max-w-[150px] md:max-w-[300px]">
                   {selectedFile}
                 </span>
               </div>
@@ -345,19 +362,20 @@ function Dashboard() {
             {isHistoryView && (
               <button
                 onClick={() => { setHistoryRepo(null); setSelectedFile(null); }}
-                className="ml-4 px-3 py-1 bg-blue-600 hover:bg-blue-700 transition-colors text-white text-xs font-medium rounded-md shadow-sm border border-blue-500"
+                className="ml-2 md:ml-4 px-2 md:px-3 py-1 bg-blue-600 hover:bg-blue-700 transition-colors text-white text-xs font-medium rounded-md shadow-sm border border-blue-500 shrink-0"
               >
-                Return to Current Repo
+                <span className="hidden sm:inline">Return to Current Repo</span>
+                <span className="sm:hidden">Exit History</span>
               </button>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4 shrink-0">
             <div className="flex items-center gap-2 text-xs">
-              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${nodeOk ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${nodeOk ? 'bg-green-400' : 'bg-red-400'}`} /> API
+              <div className={`flex items-center gap-1.5 px-2 md:px-2.5 py-1 rounded-full ${nodeOk ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${nodeOk ? 'bg-green-400' : 'bg-red-400'}`} /> <span className="hidden sm:inline">API</span>
               </div>
-              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${aiOk ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${aiOk ? 'bg-green-400' : 'bg-red-400'}`} /> AI
+              <div className={`flex items-center gap-1.5 px-2 md:px-2.5 py-1 rounded-full ${aiOk ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${aiOk ? 'bg-green-400' : 'bg-red-400'}`} /> <span className="hidden sm:inline">AI</span>
               </div>
             </div>
             {displayRepo && (
