@@ -115,6 +115,16 @@ class WorkspaceManager {
           status: 'ACTIVE'
         });
         await workspace.save();
+
+        // Save workspace metadata to Redis with 30 minute TTL (1800s)
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        await setCache(`workspace:${workspaceId}`, {
+          workspaceId,
+          ownerId,
+          status: 'ACTIVE',
+          createdAt: new Date().toISOString(),
+          expiresAt
+        }, 1800);
       }
     }
 
