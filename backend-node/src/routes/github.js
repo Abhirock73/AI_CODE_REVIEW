@@ -241,6 +241,8 @@ const githubImportLimiter = createRateLimiter({
 });
 
 router.post('/import', githubImportLimiter, async (req, res) => {
+  let repo = null;
+  let workspace = null;
   try {
     const { url, repoUrl, name } = req.body;
     const targetUrl = url || repoUrl;
@@ -283,7 +285,6 @@ router.post('/import', githubImportLimiter, async (req, res) => {
     const tree = await parseDirectory(clonePath);
     const langStats = calculateLanguageStats(tree);
 
-    let repo = null;
     if (targetUserId) {
       repo = new Repository({
         userId: targetUserId,
@@ -298,6 +299,31 @@ router.post('/import', githubImportLimiter, async (req, res) => {
         },
       });
       await repo.save();
+      
+      const Workspace = require('../models/Workspace');
+      const { setCache } = require('../services/redisCache');
+      const crypto = require('crypto');
+      
+      const workspaceId = crypto.randomUUID();
+      workspace = new Workspace({
+        workspaceId,
+        repositoryId: repo._id,
+        repositoryType: 'github',
+        ownerId: targetUserId,
+        repositoryPath: clonePath,
+        lastActivity: new Date(),
+        status: 'ACTIVE'
+      });
+      await workspace.save();
+
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      await setCache(`workspace:${workspaceId}`, {
+        workspaceId,
+        ownerId: targetUserId.toString(),
+        status: 'ACTIVE',
+        createdAt: new Date().toISOString(),
+        expiresAt
+      }, 1800);
     }
 
     res.status(201).json({
@@ -309,9 +335,20 @@ router.post('/import', githubImportLimiter, async (req, res) => {
       tree,
       languageStats: langStats,
       repo,
+      workspaceId: workspace ? workspace.workspaceId : null
     });
   } catch (error) {
     console.error('GitHub import error:', error);
+    
+    // Cleanup if failure happens after partial success
+    if (workspace && workspace.workspaceId) {
+      const WorkspaceManager = require('../services/WorkspaceManager');
+      await WorkspaceManager.deleteWorkspace(workspace.workspaceId).catch(() => {});
+    }
+    if (repo && repo._id) {
+      await Repository.deleteOne({ _id: repo._id }).catch(() => {});
+    }
+    
     res.status(500).json({ message: 'Failed to import GitHub repository', error: error.message });
   }
 });
