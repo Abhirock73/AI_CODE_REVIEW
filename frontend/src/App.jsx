@@ -194,6 +194,13 @@ function Dashboard() {
       localStorage.removeItem(LS_REPO_KEY);
       dispatch(logout());
     } else if (act === 'switch') {
+      if (currentRepo && currentRepo._id) {
+        try {
+          await apiFetch(`${BASE_URL}/api/repo/${currentRepo._id}/workspace/close`, { method: 'POST' });
+        } catch (e) {
+          console.error('Failed to close workspace on switch:', e);
+        }
+      }
       localStorage.removeItem(LS_REPO_KEY);
       setCurrentRepo(null);
       setSelectedFile(null);
