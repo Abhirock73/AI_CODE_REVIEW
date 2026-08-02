@@ -46,6 +46,9 @@ const workspaceAuth = async (req, res, next) => {
 
     // 7. Only then continue
     
+    // Refresh TTL back to 30 minutes due to activity
+    await expireCache(redisKey, 1800);
+
     // Attach to request for downstream handlers
     req.workspaceId = workspaceId;
     req.workspacePath = `/tmp/workspaces/${workspaceId}`;
