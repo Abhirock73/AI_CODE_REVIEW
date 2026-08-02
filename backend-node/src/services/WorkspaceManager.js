@@ -242,6 +242,7 @@ class WorkspaceManager {
       await Workspace.deleteOne({ workspaceId });
     } catch (err) {
       console.error(`[WorkspaceManager] Failed to delete workspace ${workspaceId}:`, err);
+      throw err;
     }
   }
 }

@@ -100,10 +100,24 @@ const delCache = async (key) => {
     console.log('Redis unavailable');
     return;
   }
+  
+  let exists = false;
+  try {
+    exists = await client.exists(key);
+  } catch (error) {
+    console.log('Redis EXISTS failed');
+    return;
+  }
+
+  if (!exists) {
+    return;
+  }
+
   try {
     await client.del(key);
   } catch (error) {
     console.log('Redis DEL failed');
+    throw new Error('Failed to delete existing cache key');
   }
 };
 
