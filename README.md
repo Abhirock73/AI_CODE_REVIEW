@@ -218,7 +218,7 @@ npm run dev
 ## ⚡ Performance & Security Optimizations
 
 - **Upstash Redis Caching:** Drastically reduces external LLM API usage and costs. Identical code states return sub-second cached reviews.
-- **Ephemeral Workspaces:** User files are processed in isolated temporary directories (`/tmp_workspace/`). A robust `useWorkspaceTimer` React hook syncs with backend cron jobs to automatically purge orphaned or expired files from the disk.
+- **Workspace Isolation & Ephemeral Storage:** User files are securely processed in fully isolated temporary directories (`/tmp_workspace/`). This strict isolation ensures complete separation between different user sessions and prevents cross-repository contamination. A robust `useWorkspaceTimer` React hook syncs with backend cron jobs and Redis caching to automatically purge orphaned or expired files from the disk, maintaining a zero-footprint architecture and enhancing data privacy.
 - **AST Parsing:** Leverages `tree-sitter` for precise, abstract-syntax-tree level code parsing before feeding context to the AI, filtering out irrelevant build artifacts and binaries.
 - **Strict CORS & Rate Limiting:** Backend utilizes `helmet` for secure headers and `express-rate-limit` to prevent abuse of the AI generation endpoints.
 
