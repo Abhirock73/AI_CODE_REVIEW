@@ -51,17 +51,20 @@ const progressEmitter = new EventEmitter();
 progressEmitter.setMaxListeners(100);
 
 // ── Model candidate lists ─────────────────────────────────────────────────────
+// Groq: use currently active models (check https://console.groq.com/docs/models)
 const GROQ_MODELS = [
-  'llama-3.1-8b-instant',
-  'llama-3.3-70b-specdec',
-  'llama3-8b-8192',
+  'llama-3.3-70b-versatile',   // Active — Llama 3.3 70b
+  'llama-3.1-70b-versatile',   // Active — Llama 3.1 70b
+  'llama-3.1-8b-instant',      // Active — Llama 3.1 8b (fast)
+  'gemma2-9b-it',              // Active — Google Gemma 2 via Groq
 ];
 
+// Gemini: model names sourced directly from Google API 404 error messages
 const GEMINI_MODELS = [
-  'gemini-2.0-flash',         // Primary — stable, fast, widely available
-  'gemini-2.0-flash-lite',    // Lighter variant of 2.0
-  'gemini-1.5-flash',         // Stable 1.5 flash (no -latest suffix, avoids deprecated alias)
-  'gemini-1.0-pro',           // Deepest fallback — oldest stable model
+  'gemini-3.6-flash',          // Google-recommended replacement for gemini-2.0-flash
+  'gemini-3.5-flash-lite',     // Google-recommended replacement for gemini-2.0-flash-lite
+  'gemini-2.5-flash',          // Intermediate generation fallback
+  'gemini-2.5-pro',            // Deepest fallback
 ];
 
 // ── Rich error logger ─────────────────────────────────────────────────────────

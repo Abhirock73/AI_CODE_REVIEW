@@ -39,9 +39,9 @@ const openai = GROQ_API_KEY ? new OpenAI({
 const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 const MODEL_CANDIDATES = [
-  "llama3-8b-8192",
-  "llama3-70b-8192",
-  "llama3-8b-8192"
+  "llama-3.3-70b-versatile",  // Active — Llama 3.3 70b
+  "llama-3.1-70b-versatile",  // Active — Llama 3.1 70b
+  "llama-3.1-8b-instant",     // Active — fast 8b model
 ];
 
 // ── Rich LLM Error Logger ─────────────────────────────────────────────────────
