@@ -51,20 +51,20 @@ const progressEmitter = new EventEmitter();
 progressEmitter.setMaxListeners(100);
 
 // ── Model candidate lists ─────────────────────────────────────────────────────
-// Groq: use currently active models (check https://console.groq.com/docs/models)
+// Verified live via GET https://api.groq.com/openai/v1/models on 2026-08-18
 const GROQ_MODELS = [
-  'llama-3.3-70b-versatile',   // Active — Llama 3.3 70b
-  'llama-3.1-70b-versatile',   // Active — Llama 3.1 70b
-  'llama-3.1-8b-instant',      // Active — Llama 3.1 8b (fast)
-  'gemma2-9b-it',              // Active — Google Gemma 2 via Groq
+  'openai/gpt-oss-120b',   // Confirmed active on this Groq key
+  'openai/gpt-oss-20b',    // Confirmed active on this Groq key (smaller/faster)
+  'qwen/qwen3.6-27b',      // Confirmed active on this Groq key
 ];
 
-// Gemini: model names sourced directly from Google API 404 error messages
+// Verified live via GET https://generativelanguage.googleapis.com/v1beta/models on 2026-08-18
+// Only models that support generateContent and are confirmed in the ListModels response
 const GEMINI_MODELS = [
-  'gemini-3.6-flash',          // Google-recommended replacement for gemini-2.0-flash
-  'gemini-3.5-flash-lite',     // Google-recommended replacement for gemini-2.0-flash-lite
-  'gemini-2.5-flash',          // Intermediate generation fallback
-  'gemini-2.5-pro',            // Deepest fallback
+  'gemini-2.5-flash',      // Confirmed available
+  'gemini-2.5-flash-lite', // Confirmed available (fast/cheap)
+  'gemini-3.5-flash',      // Confirmed available
+  'gemini-3.6-flash',      // Confirmed available
 ];
 
 // ── Rich error logger ─────────────────────────────────────────────────────────

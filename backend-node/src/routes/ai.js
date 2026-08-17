@@ -38,10 +38,11 @@ const openai = GROQ_API_KEY ? new OpenAI({
 
 const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
+// Verified live via GET https://api.groq.com/openai/v1/models on 2026-08-18
 const MODEL_CANDIDATES = [
-  "llama-3.3-70b-versatile",  // Active — Llama 3.3 70b
-  "llama-3.1-70b-versatile",  // Active — Llama 3.1 70b
-  "llama-3.1-8b-instant",     // Active — fast 8b model
+  "openai/gpt-oss-120b",  // Confirmed active on this Groq key
+  "openai/gpt-oss-20b",   // Confirmed active (faster/smaller)
+  "qwen/qwen3.6-27b",     // Confirmed active on this Groq key
 ];
 
 // ── Rich LLM Error Logger ─────────────────────────────────────────────────────
