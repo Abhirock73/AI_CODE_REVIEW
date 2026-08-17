@@ -1,5 +1,6 @@
 const express = require('express');
 const { OpenAI } = require('openai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs').promises;
 const path = require('path');
 const authMiddleware = require('../middleware/auth');
@@ -15,19 +16,67 @@ const { createRateLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-console.log(`[AI Initialization] GROQ_API_KEY configured:`, Boolean(GROQ_API_KEY));
+// ── Environment Variable Pre-flight ──────────────────────────────────────────
+const GROQ_API_KEY   = process.env.GROQ_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+console.log(`[AI Initialization] GROQ_API_KEY configured  : ${Boolean(GROQ_API_KEY)}`);
+console.log(`[AI Initialization] GEMINI_API_KEY configured: ${Boolean(GEMINI_API_KEY)}`);
+
+if (!GROQ_API_KEY) {
+  console.warn('[AI Initialization] ⚠️  GROQ_API_KEY is not set — Groq LLM calls will be skipped.');
+}
+if (!GEMINI_API_KEY) {
+  console.warn('[AI Initialization] ⚠️  GEMINI_API_KEY is not set — Gemini chat/fallback will be unavailable.');
+}
+
+// ── API Clients ───────────────────────────────────────────────────────────────
 const openai = GROQ_API_KEY ? new OpenAI({
   apiKey: GROQ_API_KEY,
   baseURL: 'https://api.groq.com/openai/v1',
 }) : null;
+
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 
 const MODEL_CANDIDATES = [
   "llama3-8b-8192",
   "llama3-70b-8192",
   "llama3-8b-8192"
 ];
+
+// ── Rich LLM Error Logger ─────────────────────────────────────────────────────
+/**
+ * Logs every available field from an LLM SDK error so the root cause
+ * (401, 429, region block, malformed key, etc.) appears clearly in the terminal.
+ */
+function logLLMError(provider, modelName, err) {
+  const status     = err.status ?? err.statusCode ?? err.code ?? 'unknown';
+  const headers    = err.headers ?? err.response?.headers ?? {};
+  const body       = err.error  ?? err.body       ?? err.data ?? null;
+  const retryAfter = headers['retry-after'] ?? headers['x-ratelimit-reset-requests'] ?? null;
+
+  console.error(`\n${'─'.repeat(60)}`);
+  console.error(`❌ [${provider}] Model "${modelName}" API call FAILED`);
+  console.error(`   HTTP Status  : ${status}`);
+  console.error(`   Error Msg   : ${err.message}`);
+  if (retryAfter) {
+    console.error(`   Retry-After : ${retryAfter}`);
+  }
+  const usefulHeaders = {};
+  for (const h of [
+    'retry-after', 'x-ratelimit-limit-requests', 'x-ratelimit-remaining-requests',
+    'x-ratelimit-reset-requests', 'www-authenticate', 'x-error-code',
+  ]) {
+    if (headers[h]) usefulHeaders[h] = headers[h];
+  }
+  if (Object.keys(usefulHeaders).length) {
+    console.error(`   Rate-limit Headers:`, JSON.stringify(usefulHeaders, null, 2));
+  }
+  if (body) {
+    console.error(`   Provider Error Body:`, typeof body === 'object' ? JSON.stringify(body, null, 2) : body);
+  }
+  console.error(`${'─'.repeat(60)}\n`);
+}
 
 /**
  * Static analysis fallback – runs basic heuristics without any LLM
@@ -61,7 +110,6 @@ function staticAnalysisFallback(fileContent, filePath, language) {
  */
 async function generateContentWithFallback(openaiClient, prompt, jsonFormat = false) {
   let lastError = null;
-  let criticalError = null;
   for (const modelName of MODEL_CANDIDATES) {
     try {
       console.log(`🟢 [Groq LLM] Trying model: "${modelName}"...`);
@@ -74,14 +122,12 @@ async function generateContentWithFallback(openaiClient, prompt, jsonFormat = fa
       console.log(`✅ [Groq LLM] Model "${modelName}" succeeded!`);
       return { result: { response: { text: () => text } }, modelName, text };
     } catch (err) {
-      console.warn(`⚠️ [Groq LLM] Model "${modelName}" failed: ${err.message}. Trying next model candidate...`);
-      if (err.status === 429 || err.status === 401 || err.status === 403 || (err.message || '').includes('429') || (err.message || '').includes('quota') || (err.message || '').includes('401')) {
-        criticalError = err;
-      }
+      logLLMError('Groq LLM', modelName, err);
+      // Auth errors are fatal — no point retrying other models
+      if (err.status === 401 || err.status === 403) throw err;
       lastError = err;
     }
   }
-  if (criticalError) throw criticalError;
   throw lastError;
 }
 
@@ -90,7 +136,6 @@ async function generateContentWithFallback(openaiClient, prompt, jsonFormat = fa
  */
 async function sendChatWithFallback(openaiClient, history, userMessage) {
   let lastError = null;
-  let criticalError = null;
   const messages = history.map(h => ({
     role: h.role === 'user' ? 'user' : 'assistant',
     content: h.parts.map(p => p.text).join('\n')
@@ -108,14 +153,12 @@ async function sendChatWithFallback(openaiClient, history, userMessage) {
       console.log(`✅ [Groq Chat] Model "${modelName}" succeeded!`);
       return { result: { response: { text: () => text } }, modelName, text };
     } catch (err) {
-      console.warn(`⚠️ [Groq Chat] Model "${modelName}" failed: ${err.message}. Trying next model candidate...`);
-      if (err.status === 429 || err.status === 401 || err.status === 403 || (err.message || '').includes('429') || (err.message || '').includes('quota') || (err.message || '').includes('401')) {
-        criticalError = err;
-      }
+      logLLMError('Groq Chat', modelName, err);
+      // Auth errors are fatal — no point retrying other models
+      if (err.status === 401 || err.status === 403) throw err;
       lastError = err;
     }
   }
-  if (criticalError) throw criticalError;
   throw lastError;
 }
 
