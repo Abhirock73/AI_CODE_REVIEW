@@ -58,10 +58,10 @@ const GROQ_MODELS = [
 ];
 
 const GEMINI_MODELS = [
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-flash-latest',
-  'gemini-1.5-pro-latest',
+  'gemini-2.0-flash',         // Primary — stable, fast, widely available
+  'gemini-2.0-flash-lite',    // Lighter variant of 2.0
+  'gemini-1.5-flash',         // Stable 1.5 flash (no -latest suffix, avoids deprecated alias)
+  'gemini-1.0-pro',           // Deepest fallback — oldest stable model
 ];
 
 // ── Rich error logger ─────────────────────────────────────────────────────────
