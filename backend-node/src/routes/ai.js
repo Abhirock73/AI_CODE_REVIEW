@@ -514,10 +514,16 @@ router.post('/review-repo', authMiddleware, workspaceAuth, reviewLimiter, async 
     } catch (pipelineErr) {
       console.error('[review-repo] Pipeline error:', pipelineErr.message);
 
-      // Auth error passthrough
-      if (pipelineErr.message.includes('401') || pipelineErr.message.includes('403') || pipelineErr.message.includes('404')) {
+      // Auth error passthrough — match on status code or explicit isFatal flag only.
+      // Avoid string-matching on '404' because Gemini model-not-found errors also contain
+      // "404" in their message text and would be falsely labelled as Groq auth failures.
+      if (
+        pipelineErr.isFatal ||
+        pipelineErr.status === 401 || pipelineErr.status === 403 ||
+        pipelineErr.message.startsWith('API Key / Model Configuration Error')
+      ) {
         return res.status(401).json({
-          message: `Groq API Configuration Error: ${pipelineErr.message}`,
+          message: `LLM API Configuration Error: ${pipelineErr.message}`,
         });
       }
 

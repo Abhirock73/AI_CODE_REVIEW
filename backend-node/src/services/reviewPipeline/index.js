@@ -58,9 +58,10 @@ const GROQ_MODELS = [
 ];
 
 const GEMINI_MODELS = [
-  'gemini-2.5-flash',
   'gemini-2.0-flash',
-  'gemini-1.5-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash-latest',
+  'gemini-1.5-pro-latest',
 ];
 
 // ── Rich error logger ─────────────────────────────────────────────────────────
@@ -357,8 +358,11 @@ async function runFullReviewPipeline({ repositoryId, storagePath, repoName, open
       lastLLMError = err;
       console.error(`  ❌ LLM (all providers) failed for "${file.relativePath}" chunk ${chunk.chunkIndex}: ${err.message}`);
       
-      // Fatal Authentication/Configuration Errors — surface immediately
-      if (err.isFatal || err.status === 401 || err.status === 403 || err.status === 404) {
+      // Fatal Authentication/Configuration Errors — surface immediately.
+      // NOTE: 404 is intentionally excluded here. For Gemini, 404 means a specific
+      // model name is not available on v1beta — that is handled inside callGeminiModels
+      // by trying the next candidate. Only true auth failures (401/403) should abort.
+      if (err.isFatal || err.status === 401 || err.status === 403) {
         throw new Error(`API Key / Model Configuration Error (${err.status ?? 'fatal'}): ${err.message}`);
       }
 
